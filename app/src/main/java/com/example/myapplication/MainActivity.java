@@ -1,11 +1,17 @@
 package com.example.myapplication;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.ImageView;
+import android.widget.Toast;
 
 import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.OpenCVLoader;
@@ -29,6 +35,8 @@ import java.util.Vector;
 public class MainActivity extends AppCompatActivity {
 
     private static String TAG = "MainActivity";
+    private static final int STORAGE_PERMISSION_CODE = 101;
+    private ReadImageText readImageText;
 
     static{
         if(OpenCVLoader.initDebug()){
@@ -37,10 +45,6 @@ public class MainActivity extends AppCompatActivity {
         else{
             Log.d(TAG, "no");
         }
-    }
-
-    private void ordenarPuntos(){
-
     }
 
     private Point getMassCenter(MatOfPoint2f points) {
@@ -126,6 +130,37 @@ public class MainActivity extends AppCompatActivity {
         return result;
     }
 
+    // This function is called when the user accepts or decline the permission.
+    // Request Code is used to check which permission called this function.
+    // This request code is provided when the user is prompt for permission.
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,  @NonNull int[] grantResults)
+    {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == STORAGE_PERMISSION_CODE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(MainActivity.this, "Storage Permission Granted", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(MainActivity.this, "Storage Permission Denied", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+
+    // Function to check and request permission
+    public void checkPermission(String permission, int requestCode)
+    {
+        // Checking if permission is not granted
+        if (ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_DENIED) {
+            ActivityCompat.requestPermissions(this, new String[] { permission }, requestCode);
+        }
+        else {
+            Toast.makeText(this, "Permission already granted", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -135,16 +170,22 @@ public class MainActivity extends AppCompatActivity {
 
         imageView.setImageResource(R.drawable.ine1);
 
+        checkPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE, STORAGE_PERMISSION_CODE);
+
         try {
             Mat img = Utils.loadResource(this, R.drawable.ine1, CvType.CV_8UC4);
+            Mat imgGray = new Mat();
+            Mat imgCanny = new Mat();
+            Mat imgDilate = new Mat();
+            Mat dst = new Mat();
 
-            Imgproc.cvtColor(img, img, Imgproc.COLOR_BGR2GRAY);
-            Imgproc.Canny(img,img,50,100);
-            Imgproc.dilate(img,img, Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(2,2)));
+            Imgproc.cvtColor(img, imgGray, Imgproc.COLOR_BGR2GRAY);
+            Imgproc.Canny(imgGray, imgCanny,50,100);
+            Imgproc.dilate(imgCanny, imgDilate, Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(2,2)));
 
             List<MatOfPoint> contours = new ArrayList<MatOfPoint>();
             final Mat hierarchy = new Mat();
-            Imgproc.findContours(img, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
+            Imgproc.findContours(imgDilate, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
             //Imgproc.drawContours(img, contours, -1, new Scalar(120), 2);
 
             //Ordena los contornos de menor a mayor, el mayor es la ine
@@ -179,18 +220,26 @@ public class MainActivity extends AppCompatActivity {
                 Imgproc.circle(img,approx.toList().get(2),7, new Scalar(200), 10);
                 Imgproc.circle(img,approx.toList().get(3),7, new Scalar(255), 10);
 
-                img=transform(img,approx2f);
+                dst = transform(imgGray,approx2f);
             }
 
 
-            Bitmap bmp=Bitmap.createBitmap(img.width(), img.height(), Bitmap.Config.ARGB_8888);
-            Utils.matToBitmap(img, bmp);
+            Bitmap bmp=Bitmap.createBitmap(dst.width(), dst.height(), Bitmap.Config.ARGB_8888);
+            Utils.matToBitmap(dst, bmp);
             imageView.setImageBitmap(bmp);
 
-
+            readImageText = new ReadImageText(this);
+            Log.d(TAG, readImageText.processImage(bmp, "spa"));
 
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        readImageText.recycle();
+
     }
 }
