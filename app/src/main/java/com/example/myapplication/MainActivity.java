@@ -32,7 +32,7 @@ public class MainActivity extends AppCompatActivity {
 
     static{
         if(OpenCVLoader.initDebug()){
-            Log.d(TAG, "si");
+            //Log.d(TAG, "si");
         }
         else{
             Log.d(TAG, "no");
@@ -56,40 +56,43 @@ public class MainActivity extends AppCompatActivity {
             Imgproc.dilate(img,img, Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(2,2)));
 
             List<MatOfPoint> contours = new ArrayList<MatOfPoint>();
-            Imgproc.findContours(img, contours, new Mat(), Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
-            //Imgproc.drawContours(img, contours, -1, new Scalar(120), 5);
+            final Mat hierarchy = new Mat();
+            Imgproc.findContours(img, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
+            //Imgproc.drawContours(img, contours, -1, new Scalar(120), 2);
 
-            //TODO: este bloque no tiene importancia todavía, pero en python hago un ordenamiento
+            //Ordena los contornos de menor a mayor, el mayor es la ine
             contours.sort(new Comparator<MatOfPoint>() {
                 public int compare(MatOfPoint c1, MatOfPoint c2) {
                     return (int) (Imgproc.contourArea(c1)- Imgproc.contourArea(c2));
                 }
             });
 
-            MatOfPoint c=new MatOfPoint();
-            final int size = contours.size();
-            for (int i = 0; i < size; i++)
-            {
-                c = contours.get(i);
-                MatOfPoint2f c2f = new MatOfPoint2f( c.toArray() );
-                double epsilon = 0.01*Imgproc.arcLength(c2f, true);
+            //imprime en logcat el último contorno (el mayor), en caso de la imagen de ejemplo; 25
+            Log.d(TAG, contours.get(contours.size()-1).toList().toString());
+            //Log.d(TAG, String.valueOf(contours.size()));
 
-                MatOfPoint2f approx2f = new MatOfPoint2f();
-                Imgproc.approxPolyDP(c2f, approx2f, epsilon, true);
+            MatOfPoint c = new MatOfPoint();
+            c = contours.get(contours.size()-1);
 
-                if (approx2f.rows()==4){
-                    MatOfPoint approx = new MatOfPoint( approx2f.toArray() );
-                    List<MatOfPoint> approxlist = new ArrayList<MatOfPoint>();
-                    approxlist.add(approx);
-                    Imgproc.drawContours(img, approxlist, 0, new Scalar(200), 5);
+            MatOfPoint2f c2f = new MatOfPoint2f( c.toArray() );
+            double epsilon = 0.01*Imgproc.arcLength(c2f, true);
 
-                    //TODO: te quedaste en el equivalente de la linea 38 de python, tuviste la idea de la suma de coordenadas para sacar el primero y el ultimo
-                    //TODO: pero te quedaste entendiendo la variable approx y cómo obtener las coordenadas
-                    Log.d(TAG, approx.toList().toString());
-                    //puntos = ordenar_puntos(approxlist);
+            MatOfPoint2f approx2f = new MatOfPoint2f();
+            Imgproc.approxPolyDP(c2f, approx2f, epsilon, true);
 
-                }
+            if (approx2f.rows()==4){
+                MatOfPoint approx = new MatOfPoint( approx2f.toArray() );
+                List<MatOfPoint> approxlist = new ArrayList<MatOfPoint>();
+                approxlist.add(approx);
+                Imgproc.drawContours(img, approxlist, 0, new Scalar(200), 5);
+
+                //TODO: te quedaste en el equivalente de la linea 38 de python, tuviste la idea de la suma de coordenadas para sacar el primero y el ultimo
+                //TODO: pero te quedaste entendiendo la variable approx y cómo obtener las coordenadas
+                Log.d(TAG, approx.toList().toString());
+                //puntos = ordenar_puntos(approxlist);
+
             }
+
 
             Bitmap bmp=Bitmap.createBitmap(img.width(), img.height(), Bitmap.Config.ARGB_8888);
             Utils.matToBitmap(img, bmp);
@@ -100,11 +103,5 @@ public class MainActivity extends AppCompatActivity {
         } catch (IOException e) {
             e.printStackTrace();
         }
-
-
-
-        //there could be some processing
-        //Imgproc.cvtColor(img, img, Imgproc.COLOR_GRAY2RGB, 4);
-        //Utils.matToBitmap(tmp, b);
     }
 }
