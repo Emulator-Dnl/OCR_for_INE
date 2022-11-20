@@ -173,38 +173,13 @@ public class MainActivity extends AppCompatActivity {
                 approxlist.add(approx);
                 Imgproc.drawContours(img, approxlist, 0, new Scalar(200), 5);
 
-                Log.d(TAG, approx.toList().toString());
-
-                //ordena los puntos
-                List<Point> approxSorted= new ArrayList<Point>();
-                approxSorted = approx.toList();
-                approxSorted.sort(new Comparator<Point>() {
-                    public int compare(Point c1, Point c2) {
-                        return (int) (c1.x- c2.x);
-                    }
-                });
-
-                MatOfPoint2f sortedCorners = sortCorners(approx2f);
-
-                Log.d(TAG, approxSorted.toString());
-
-                Imgproc.circle(img,approxSorted.get(0),7, new Scalar(50), 10);
-                Imgproc.circle(img,approxSorted.get(1),7, new Scalar(100), 10);
-                Imgproc.circle(img,approxSorted.get(2),7, new Scalar(200), 10);
-                Imgproc.circle(img,approxSorted.get(3),7, new Scalar(255), 10);
-
-                MatOfPoint pts2 = new MatOfPoint();
-                pts2.fromArray(new Point(0,540),new Point(0,0),new Point(860,0),new Point(860,540));
-
-                //requiero mat pero tengo lista de point
-                //Mat M = Imgproc.getPerspectiveTransform(approx, pts2);
-                //Imgproc.warpPerspective(img, img, M, new Size(860, 540),0,3, new Scalar(200));
+                //esos puntos no están ordenados porque los ordeno en las funciones robadas
+                Imgproc.circle(img,approx.toList().get(0),7, new Scalar(50), 10);
+                Imgproc.circle(img,approx.toList().get(1),7, new Scalar(100), 10);
+                Imgproc.circle(img,approx.toList().get(2),7, new Scalar(200), 10);
+                Imgproc.circle(img,approx.toList().get(3),7, new Scalar(255), 10);
 
                 img=transform(img,approx2f);
-
-
-
-
             }
 
 
