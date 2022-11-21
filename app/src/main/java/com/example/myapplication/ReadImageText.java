@@ -33,9 +33,11 @@ public class ReadImageText {
             folder.mkdirs();
             Log.d("MainActivity", "se crea path");
         }
+
+        //TODO: Siempre se añade/sobreescribe si la carpeta existe, aún si ya está ahí el archivo de entrenamiento; ineficiente
         if (folder.exists()){
             addFile("spa.traineddata",R.raw.spa_old);
-            Log.d("MainActivity", "se añoade archivo");
+            //Log.d("MainActivity", "se añade archivo de entrenamiento");
         }
     }
 
@@ -55,8 +57,7 @@ public class ReadImageText {
     }
 
     public String processImage (Bitmap image, String lang){
-
-        Log.d("MainActivity", dataPath);
+        //Log.d("MainActivity", dataPath);
         tess.init(dataPath, lang);
         tess.setImage(image);
         return tess.getUTF8Text();

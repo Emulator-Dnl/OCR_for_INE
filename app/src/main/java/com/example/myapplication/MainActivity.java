@@ -21,6 +21,7 @@ import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
 import org.opencv.core.MatOfPoint2f;
 import org.opencv.core.Point;
+import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
 import org.opencv.core.Size;
 import org.opencv.imgcodecs.Imgcodecs;
@@ -167,7 +168,6 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         ImageView imageView = (ImageView) findViewById(R.id.imageView);
-
         imageView.setImageResource(R.drawable.ine1);
 
         checkPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE, STORAGE_PERMISSION_CODE);
@@ -221,19 +221,50 @@ public class MainActivity extends AppCompatActivity {
                 Imgproc.circle(img,approx.toList().get(3),7, new Scalar(255), 10);
 
                 dst = transform(imgGray,approx2f);
+
+            }else{
+                //Si se detecta que la figura no tiene 4 lados, el programa falla
+                Log.d(TAG, "Se detectó un numero diferente a los 4 lados de la credencial");
+                return;
             }
 
+            //A diferencia de en la implementación en python, aquí definimos alto y ancho, no otro punto
+            Mat nacimiento = cropMat(dst, 81,30,15,6);
+            Mat sexo = cropMat(dst, 93,36,4,4);
+            Mat nombre = cropMat(dst, 31,30,29,15);
+            Mat domicilio = cropMat(dst, 31,50,34,10);
+            Mat clave = cropMat(dst, 49,66,31,6);
+            Mat curp = cropMat(dst, 37,72,29,6);
+            Mat estado = cropMat(dst, 40,80,5,5);
+            Mat municipio = cropMat(dst, 62,80,7,5);
+            Mat seccion = cropMat(dst, 80,80,8,5);
+            Mat localidad = cropMat(dst, 42,86,8,6);
 
-            Bitmap bmp=Bitmap.createBitmap(dst.width(), dst.height(), Bitmap.Config.ARGB_8888);
-            Utils.matToBitmap(dst, bmp);
-            imageView.setImageBitmap(bmp);
+            Mat[] ine = {nacimiento, sexo, nombre, domicilio, clave, curp, estado, municipio, seccion, localidad};
 
-            readImageText = new ReadImageText(this);
-            Log.d(TAG, readImageText.processImage(bmp, "spa"));
+            for (Mat campo: ine
+                 ) {
+                Bitmap bmp=Bitmap.createBitmap(campo.width(), campo.height(), Bitmap.Config.ARGB_8888);
+                Utils.matToBitmap(campo, bmp);
+                //imageView.setImageBitmap(bmp);
+
+                readImageText = new ReadImageText(this);
+                Log.d(TAG, readImageText.processImage(bmp, "spa"));
+            }
 
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private Mat cropMat(Mat mat, int x, int y, int width, int height){
+        float rows1percent = (float) mat.rows()/100;
+        float cols1percent = (float) mat.cols()/100;
+
+        return new Mat(mat, new Rect(Math.round(cols1percent*x),
+                Math.round(rows1percent*y),
+                Math.round(cols1percent*width),
+                Math.round(rows1percent*height)));
     }
 
     @Override
