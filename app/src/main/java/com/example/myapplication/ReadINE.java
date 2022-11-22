@@ -19,10 +19,11 @@ import org.opencv.imgproc.Imgproc;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-//TODO: recibo mapa de bits, retorno diccionario de datos
 public class ReadINE {
     private static String TAG = "MainActivity";
     private ReadImageText readImageText;
@@ -59,7 +60,7 @@ public class ReadINE {
             //Imgproc.drawContours(img, contours, -1, new Scalar(120), 2);
 
             //Ordena los contornos de menor a mayor, el mayor es la ine
-            contours.sort(new Comparator<MatOfPoint>() {
+            Collections.sort(contours, new Comparator<MatOfPoint>() {
                 public int compare(MatOfPoint c1, MatOfPoint c2) {
                     return (int) (Imgproc.contourArea(c1)- Imgproc.contourArea(c2));
                 }
@@ -112,17 +113,16 @@ public class ReadINE {
             String[] fieldNames = {"nacimiento", "sexo", "nombre", "domicilio", "clave", "curp", "estado", "municipio", "seccion", "localidad"};
             Mat[] ine = {nacimiento, sexo, nombre, domicilio, clave, curp, estado, municipio, seccion, localidad};
 
+            readImageText = new ReadImageText(context, "spa");
             int i = 0;
             for (Mat campo: ine
             ) {
                 Bitmap bmp=Bitmap.createBitmap(campo.width(), campo.height(), Bitmap.Config.ARGB_8888);
                 Utils.matToBitmap(campo, bmp);
                 //imageView.setImageBitmap(bmp);
+                //Log.d(TAG, readImageText.processImage(bmp));
 
-                readImageText = new ReadImageText(context);
-                Log.d(TAG, readImageText.processImage(bmp, "spa"));
-
-                fields.putString(fieldNames[i], readImageText.processImage(bmp, "spa"));
+                fields.putString(fieldNames[i], readImageText.processImage(bmp));
                 i++;
             }
 

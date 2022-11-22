@@ -96,8 +96,17 @@ public class MainActivity extends AppCompatActivity {
             Utils.matToBitmap(mat,bmp);
 
             readINE = new ReadINE(this, bmp);
-
+            Log.d(TAG, readINE.getString("nacimiento"));
+            Log.d(TAG, readINE.getString("sexo"));
             Log.d(TAG, readINE.getString("nombre"));
+            Log.d(TAG, readINE.getString("domicilio"));
+            Log.d(TAG, readINE.getString("clave"));
+            Log.d(TAG, readINE.getString("curp"));
+            Log.d(TAG, readINE.getString("estado"));
+            Log.d(TAG, readINE.getString("municipio"));
+            Log.d(TAG, readINE.getString("seccion"));
+            Log.d(TAG, readINE.getString("localidad"));
+
 
         } catch (IOException e) {
             e.printStackTrace();

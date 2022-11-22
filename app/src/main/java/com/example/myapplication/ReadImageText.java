@@ -25,7 +25,7 @@ public class ReadImageText {
     String dataPath = new File(Environment.getExternalStorageDirectory()+"/tesseract").getAbsolutePath();
 
 
-    public ReadImageText(Context context) throws IOException {
+    public ReadImageText(Context context, String lang) throws IOException {
         this.context=context;
 
         File folder = new File(dataPath, tessDataFolderName);
@@ -39,6 +39,8 @@ public class ReadImageText {
             addFile("spa.traineddata",R.raw.spa_old);
             //Log.d("MainActivity", "se añade archivo de entrenamiento");
         }
+
+        tess.init(dataPath, lang);
     }
 
     private void addFile (String name, int source) throws IOException {
@@ -56,9 +58,7 @@ public class ReadImageText {
         }
     }
 
-    public String processImage (Bitmap image, String lang){
-        //Log.d("MainActivity", dataPath);
-        tess.init(dataPath, lang);
+    public String processImage (Bitmap image){
         tess.setImage(image);
         return tess.getUTF8Text();
     }
