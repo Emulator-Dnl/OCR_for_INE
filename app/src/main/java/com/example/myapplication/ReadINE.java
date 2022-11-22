@@ -2,6 +2,7 @@ package com.example.myapplication;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.os.Bundle;
 import android.util.Log;
 
 import org.opencv.android.OpenCVLoader;
@@ -25,10 +26,16 @@ import java.util.List;
 public class ReadINE {
     private static String TAG = "MainActivity";
     private ReadImageText readImageText;
+    private Bundle fields;
+
+    public Bundle getFields(){
+        return fields;
+    }
 
     public ReadINE(Context context, Bitmap bitmap) {
-        try {
+        fields = new Bundle();
 
+        try {
             Mat img = new Mat();
             Utils.bitmapToMat(bitmap, img);
 
@@ -98,8 +105,10 @@ public class ReadINE {
             Mat seccion = cropMat(dst, 80,80,8,5);
             Mat localidad = cropMat(dst, 42,86,8,6);
 
+            String[] fieldNames = {"nacimiento", "sexo", "nombre", "domicilio", "clave", "curp", "estado", "municipio", "seccion", "localidad"};
             Mat[] ine = {nacimiento, sexo, nombre, domicilio, clave, curp, estado, municipio, seccion, localidad};
 
+            int i = 0;
             for (Mat campo: ine
             ) {
                 Bitmap bmp=Bitmap.createBitmap(campo.width(), campo.height(), Bitmap.Config.ARGB_8888);
@@ -108,6 +117,9 @@ public class ReadINE {
 
                 readImageText = new ReadImageText(context);
                 Log.d(TAG, readImageText.processImage(bmp, "spa"));
+
+                fields.putString(fieldNames[i], readImageText.processImage(bmp, "spa"));
+                i++;
             }
 
         } catch (IOException e) {
