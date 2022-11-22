@@ -96,9 +96,8 @@ public class MainActivity extends AppCompatActivity {
             Utils.matToBitmap(mat,bmp);
 
             readINE = new ReadINE(this, bmp);
-            Bundle b = readINE.getFields();
 
-            Log.d(TAG, b.getString("nombre"));
+            Log.d(TAG, readINE.getString("nombre"));
 
         } catch (IOException e) {
             e.printStackTrace();

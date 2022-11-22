@@ -32,6 +32,10 @@ public class ReadINE {
         return fields;
     }
 
+    public String getString(String key){
+        return fields.getString(key);
+    }
+
     public ReadINE(Context context, Bitmap bitmap) {
         fields = new Bundle();
 
