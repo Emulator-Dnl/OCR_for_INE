@@ -53,17 +53,13 @@ public class ReadImageText {
         //Este if escribe el archivo únicamente en caso de que no exista; no sobreescribe; eficiente
         if (!file.exists()){
             Log.d("MainActivity", "se añade archivo de entrenamiento");
-            //InputStream inputStream = context.getResources().openRawResource(source);
-            //java.nio.file.Files.copy(inputStream, file.toPath(), StandardCopyOption.REPLACE_EXISTING);
-            //inputStream.close();
-            //file.createNewFile();
-
             copyFiletoExternalStorage(source, dataPath + "/" + tessDataFolderName + "/" + name);
         }
     }
 
     private void copyFiletoExternalStorage(int resourceId, String resourceName){
-        String pathSDCard = Environment.getExternalStorageDirectory() + "/Android/data/" + resourceName;
+        //String pathSDCard = Environment.getExternalStorageDirectory() + "/Android/data/" + resourceName;
+        String pathSDCard = resourceName;
         try{
             InputStream in = context.getResources().openRawResource(resourceId);
             FileOutputStream out = null;
