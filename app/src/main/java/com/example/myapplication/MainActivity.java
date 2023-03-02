@@ -16,6 +16,7 @@ import android.widget.Toast;
 import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.OpenCVLoader;
 import org.opencv.android.Utils;
+import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
@@ -92,6 +93,11 @@ public class MainActivity extends AppCompatActivity {
 
         try {
             Mat mat = Utils.loadResource(this, R.drawable.ine1, CvType.CV_8UC4);
+
+            //Core.rotate(mat, mat, Core.ROTATE_90_CLOCKWISE);
+            //Core.rotate(mat, mat, Core.ROTATE_90_COUNTERCLOCKWISE);
+            //Core.rotate(mat, mat, Core.ROTATE_180);
+
             Bitmap bmp=Bitmap.createBitmap(mat.width(), mat.height(), Bitmap.Config.ARGB_8888);
             Utils.matToBitmap(mat,bmp);
 
@@ -107,6 +113,7 @@ public class MainActivity extends AppCompatActivity {
             Log.d(TAG, readINE.getString("seccion"));
             Log.d(TAG, readINE.getString("localidad"));
 
+            imageView.setImageBitmap(readINE.imageOutput);
 
         } catch (IOException e) {
             e.printStackTrace();

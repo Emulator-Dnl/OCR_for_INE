@@ -29,6 +29,9 @@ public class ReadINE {
     private ReadImageText readImageText;
     private Bundle fields;
 
+    //Para debuguear
+    public Bitmap imageOutput;
+
     public Bundle getFields(){
         return fields;
     }
@@ -49,6 +52,8 @@ public class ReadINE {
             Mat imgCanny = new Mat();
             Mat imgDilate = new Mat();
             Mat dst = new Mat();
+            Mat dst1 = new Mat();
+            Mat dst2 = new Mat();
 
             Imgproc.cvtColor(img, imgGray, Imgproc.COLOR_BGR2GRAY);
             Imgproc.Canny(imgGray, imgCanny,50,100);
@@ -84,19 +89,77 @@ public class ReadINE {
                 approxlist.add(approx);
                 Imgproc.drawContours(img, approxlist, 0, new Scalar(200), 5);
 
-                //esos puntos no están ordenados porque los ordeno en las funciones robadas
+                //esos puntos no están ordenados porque los ordeno en las funciones que encontré en un ejemplo
                 Imgproc.circle(img,approx.toList().get(0),7, new Scalar(50), 10);
                 Imgproc.circle(img,approx.toList().get(1),7, new Scalar(100), 10);
                 Imgproc.circle(img,approx.toList().get(2),7, new Scalar(200), 10);
                 Imgproc.circle(img,approx.toList().get(3),7, new Scalar(255), 10);
 
-                dst = transform(imgGray,approx2f);
+                //TODO: crear funciones para que no quedé tan grande el constructor
+                //Tuve que destripar la funcion transform aquí para arreglar lo de cualquier orientacion
+                //Log.d(TAG, approx2f.toList().toString());
+                //dst = transform(imgGray,approx2f);
+
+                MatOfPoint2f puntos = sortCorners(approx2f);
+                MatOfPoint2f puntos1 = puntos;
+                MatOfPoint2f puntos2 = rotateClockwise(rotateClockwise(puntos));
+
+                //Si la credencial está vertical
+                List<Point> puntosList = puntos.toList();
+                Log.d(TAG, puntosList.toString());
+                if (puntosList.get(0).x - puntosList.get(1).x  > puntosList.get(0).x - puntosList.get(3).y){
+                    puntos1 = rotateClockwise(puntos);
+                    puntos2 = rotateClockwise(rotateClockwise(rotateClockwise(puntos)));
+                }
+
+                Size size1 = getRectangleSize(puntos1);
+                Size size2 = getRectangleSize(puntos2);
+
+                dst1 = Mat.zeros(size1, imgGray.type());
+                dst2 = Mat.zeros(size2, imgGray.type());
+
+                MatOfPoint2f imageOutline1 = getOutline(dst1);
+                MatOfPoint2f imageOutline2 = getOutline(dst2);
+
+                Mat M1 = Imgproc.getPerspectiveTransform(puntos1, imageOutline1);
+                Mat M2 = Imgproc.getPerspectiveTransform(puntos2, imageOutline2);
+
+                Imgproc.warpPerspective(imgGray, dst1, M1, size1);
+                Imgproc.warpPerspective(imgGray, dst2, M2, size2);
 
             }else{
                 //Si se detecta que la figura no tiene 4 lados, el programa falla
                 Log.d(TAG, "Se detectó un numero diferente a los 4 lados de la credencial");
                 return;
             }
+
+            //Para diferenciar la correcta de la que está al revés, leo el campo estado, que de estar la imagen al revés saldrá vacío"
+            Mat localidad1 = cropMat(dst1, 40,80,5,5); //estado
+            Mat localidad2 = cropMat(dst2, 40,80,5,5);
+
+            Bitmap localidad1Bmp=Bitmap.createBitmap(localidad1.width(), localidad1.height(), Bitmap.Config.ARGB_8888);
+            Utils.matToBitmap(localidad1, localidad1Bmp);
+
+            Bitmap localidad2Bmp=Bitmap.createBitmap(localidad2.width(), localidad2.height(), Bitmap.Config.ARGB_8888);
+            Utils.matToBitmap(localidad2, localidad2Bmp);
+
+            readImageText = new ReadImageText(context, "spa");
+
+            String texto1 = readImageText.processImage(localidad1Bmp);
+            String texto2 = readImageText.processImage(localidad2Bmp);
+
+            //TODO: No distingue bien la imagen correcta todavía
+            if (texto1.length() >= texto2.length()){
+                dst = dst1;
+            }
+            else{
+                dst = dst2;
+            }
+
+            Bitmap dstBmp=Bitmap.createBitmap(dst.width(), dst.height(), Bitmap.Config.ARGB_8888);
+            Utils.matToBitmap(dst, dstBmp);
+
+            imageOutput = dstBmp;
 
             //A diferencia de en la implementación en python, aquí definimos alto y ancho, no otro punto
             Mat nacimiento = cropMat(dst, 81,30,15,6);
@@ -113,10 +176,9 @@ public class ReadINE {
             String[] fieldNames = {"nacimiento", "sexo", "nombre", "domicilio", "clave", "curp", "estado", "municipio", "seccion", "localidad"};
             Mat[] ine = {nacimiento, sexo, nombre, domicilio, clave, curp, estado, municipio, seccion, localidad};
 
-            readImageText = new ReadImageText(context, "spa");
+            //readImageText = new ReadImageText(context, "spa");
             int i = 0;
-            for (Mat campo: ine
-            ) {
+            for (Mat campo: ine) {
                 Bitmap bmp=Bitmap.createBitmap(campo.width(), campo.height(), Bitmap.Config.ARGB_8888);
                 Utils.matToBitmap(campo, bmp);
                 //imageView.setImageBitmap(bmp);
@@ -126,9 +188,23 @@ public class ReadINE {
                 i++;
             }
 
+            //Bitmap bmp1=Bitmap.createBitmap(dst.width(), dst.height(), Bitmap.Config.ARGB_8888);
+            //Utils.matToBitmap(dst, bmp1);
+            //Log.d(TAG, readImageText.processImage(bmp1));
+
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private MatOfPoint2f rotateClockwise(MatOfPoint2f points){
+        List<Point> pointsList = points.toList();
+
+        Point[] rotatedPoints = {pointsList.get(3), pointsList.get(0), pointsList.get(1), pointsList.get(2)};
+
+        MatOfPoint2f result = new MatOfPoint2f();
+        result.fromArray(rotatedPoints);
+        return result;
     }
 
     private Mat cropMat(Mat mat, int x, int y, int width, int height){
